@@ -3,7 +3,7 @@ import { Box, Button, Slider, Typography, Paper, Stack, Alert, useTheme, useMedi
 import { styled } from '@mui/material/styles';
 import io from 'socket.io-client';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL ;
 
 const StyledSlider = styled(Slider)(({ theme }) => ({
   color: theme.palette.primary.main,
@@ -128,24 +128,57 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
     context.closePath();
   };
 
+  const getCoordinates = (event) => {
+    const rect = canvasRef.current.getBoundingClientRect();
+    if (event.type.includes('touch')) {
+      // For touch events
+      const touch = event.touches[0] || event.changedTouches[0];
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    } else {
+      // For mouse events
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+    }
+  };
+
   const startDrawing = (e) => {
     if (isAdmin || !timerRunning) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    e.preventDefault(); // Prevent scrolling on mobile
+    const { x, y } = getCoordinates(e);
     setIsDrawing(true);
     draw(x, y, x, y, 'black', brushSize);
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (e) => {
+    if (e) e.preventDefault();
     setIsDrawing(false);
   };
 
   const handleDrawing = (e) => {
     if (!isDrawing || isAdmin || !timerRunning) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    e.preventDefault();
+    const { x, y } = getCoordinates(e);
+    
+    draw(x - 1, y - 1, x, y, 'black', brushSize);
+    socketRef.current.emit('draw', {
+      x0: x - 1,
+      y0: y - 1,
+      x1: x,
+      y1: y,
+      color: 'black',
+      size: brushSize
+    });
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDrawing || isAdmin || !timerRunning) return;
+    e.preventDefault();
+    const { x, y } = getCoordinates(e);
     
     draw(x - 1, y - 1, x, y, 'black', brushSize);
     socketRef.current.emit('draw', {
@@ -378,6 +411,7 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
           position: 'relative',
           overflow: 'hidden',
           width: 'fit-content',
+          touchAction: 'none', // Prevent default touch actions
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -399,7 +433,8 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
           onMouseMove={handleDrawing}
           onTouchStart={startDrawing}
           onTouchEnd={stopDrawing}
-          onTouchMove={handleDrawing}
+          onTouchCancel={stopDrawing}
+          onTouchMove={handleTouchMove}
           style={{
             border: '1px solid #eee',
             borderRadius: '12px',
