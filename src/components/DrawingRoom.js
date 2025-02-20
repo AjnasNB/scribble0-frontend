@@ -6,9 +6,6 @@ import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import RectangleOutlinedIcon from '@mui/icons-material/CropSquareOutlined';
 import CreateIcon from '@mui/icons-material/Create';
 import PanToolIcon from '@mui/icons-material/PanTool';
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
-import StarBorderIcon from '@mui/icons-material/StarBorder';
-import HexagonIcon from '@mui/icons-material/Hexagon';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -334,20 +331,8 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
     
-    // Create a temporary canvas to store the current state
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = canvasWidth;
-    tempCanvas.height = canvasHeight;
-    const tempContext = tempCanvas.getContext('2d');
-    
-    // Copy current canvas state to temp canvas
-    tempContext.drawImage(canvas, 0, 0);
-    
-    // Clear main canvas
+    // Clear canvas
     context.clearRect(0, 0, canvasWidth, canvasHeight);
-    
-    // Restore the previous state
-    context.drawImage(tempCanvas, 0, 0);
     
     // Draw all shapes
     shapes.forEach(shape => {
@@ -355,34 +340,18 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
       context.strokeStyle = 'black';
       context.lineWidth = 2;
       
-      switch(shape.type) {
-        case 'circle':
-          context.arc(
-            shape.x + shape.width/2,
-            shape.y + shape.height/2,
-            shape.width/2,
-            0,
-            2 * Math.PI
-          );
-          break;
-        case 'square':
-          context.rect(shape.x, shape.y, shape.width, shape.height);
-          break;
-        case 'triangle':
-          context.moveTo(shape.x + shape.width/2, shape.y);
-          context.lineTo(shape.x + shape.width, shape.y + shape.height);
-          context.lineTo(shape.x, shape.y + shape.height);
-          context.closePath();
-          break;
-        case 'star':
-          drawStar(context, shape.x + shape.width/2, shape.y + shape.height/2, 5, shape.width/2, shape.width/4);
-          break;
-        case 'hexagon':
-          drawHexagon(context, shape.x + shape.width/2, shape.y + shape.height/2, shape.width/2);
-          break;
-        default:
-          break;
+      if (shape.type === 'circle') {
+        context.arc(
+          shape.x + shape.width/2,
+          shape.y + shape.height/2,
+          shape.width/2,
+          0,
+          2 * Math.PI
+        );
+      } else if (shape.type === 'square') {
+        context.rect(shape.x, shape.y, shape.width, shape.height);
       }
+      
       context.stroke();
       
       // Highlight selected shape
