@@ -3,7 +3,22 @@ import { Box, Button, Slider, Typography, Paper, Stack, Alert, useTheme, useMedi
 import { styled } from '@mui/material/styles';
 import io from 'socket.io-client';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL ;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
+// Socket.IO connection options
+const socketOptions = {
+  transports: ['websocket'],
+  secure: true,
+  rejectUnauthorized: false,
+  path: '/socket.io',
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  forceNew: true,
+  timeout: 10000,
+  autoConnect: false,
+  withCredentials: true
+};
 
 const StyledSlider = styled(Slider)(({ theme }) => ({
   color: theme.palette.primary.main,
@@ -42,9 +57,26 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
   }, [brushSize]);
 
   useEffect(() => {
-    // Connect to Socket.IO server
-    socketRef.current = io(BACKEND_URL);
+    // Create Socket.IO instance with modified URL to ensure WSS
+    const url = new URL(BACKEND_URL);
+    url.protocol = url.protocol.replace('http', 'ws');
     
+    // Connect to Socket.IO server with options
+    socketRef.current = io(url.toString(), socketOptions);
+    socketRef.current.connect();
+    
+    // Add connection error handler
+    socketRef.current.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+      setError('Connection error. Please try again.');
+    });
+
+    // Add reconnect handler
+    socketRef.current.on('reconnect', (attemptNumber) => {
+      console.log('Reconnected on attempt:', attemptNumber);
+      setError(null);
+    });
+
     // Join room
     socketRef.current.emit('joinRoom', { roomId, isAdmin });
 
@@ -97,7 +129,9 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
     });
 
     return () => {
-      socketRef.current.disconnect();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
     };
   }, [roomId, isAdmin, canvasWidth, canvasHeight]);
 
