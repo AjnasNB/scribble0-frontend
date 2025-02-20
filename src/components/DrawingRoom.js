@@ -43,7 +43,7 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
   const [timer, setTimer] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [playerCount, setPlayerCount] = useState(0);
-  const [maxPlayers, setMaxPlayers] = useState(8);
+  const [maxPlayers, setMaxPlayers] = useState(12);
   const [error, setError] = useState(null);
   const [brushSize, setBrushSize] = useState(2);
 
