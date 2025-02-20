@@ -1,11 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Slider, Typography, Paper, Stack, Alert, useTheme, useMediaQuery, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, Button, Slider, Typography, Paper, Stack, Alert, useTheme, useMediaQuery } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import io from 'socket.io-client';
-import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
-import RectangleOutlinedIcon from '@mui/icons-material/CropSquareOutlined';
-import CreateIcon from '@mui/icons-material/Create';
-import PanToolIcon from '@mui/icons-material/PanTool';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -33,19 +29,6 @@ const StyledSlider = styled(Slider)(({ theme }) => ({
   },
 }));
 
-const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
-  backgroundColor: 'rgba(255,255,255,0.05)',
-  borderRadius: 8,
-  '& .MuiToggleButton-root': {
-    color: theme.palette.text.secondary,
-    borderColor: 'rgba(255,255,255,0.1)',
-    '&.Mui-selected': {
-      color: theme.palette.primary.main,
-      backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    },
-  },
-}));
-
 const DrawingRoom = ({ roomId, isAdmin }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -63,11 +46,6 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
   const [maxPlayers, setMaxPlayers] = useState(8);
   const [error, setError] = useState(null);
   const [brushSize, setBrushSize] = useState(2);
-  const [tool, setTool] = useState('pencil');
-  const [shapes, setShapes] = useState([]);
-  const [selectedShape, setSelectedShape] = useState(null);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [isMoving, setIsMoving] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -187,14 +165,12 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
   const getCoordinates = (event) => {
     const rect = canvasRef.current.getBoundingClientRect();
     if (event.type.includes('touch')) {
-      // For touch events
       const touch = event.touches[0] || event.changedTouches[0];
       return {
         x: touch.clientX - rect.left,
         y: touch.clientY - rect.top
       };
     } else {
-      // For mouse events
       return {
         x: event.clientX - rect.left,
         y: event.clientY - rect.top
@@ -206,52 +182,30 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
     if (isAdmin || !timerRunning) return;
     e.preventDefault();
     const { x, y } = getCoordinates(e);
-    
-    if (tool === 'pencil') {
-      setIsDrawing(true);
-      draw(x, y, x, y, 'black', brushSize);
-    } else if (tool === 'move') {
-      const clickedShape = findShapeAtPosition(x, y);
-      if (clickedShape) {
-        setSelectedShape(clickedShape);
-        setIsMoving(true);
-        setStartPos({ x, y });
-      }
-    } else {
-      addShape(tool, x, y);
-    }
+    setIsDrawing(true);
+    draw(x, y, x, y, 'black', brushSize);
   };
 
   const stopDrawing = (e) => {
     if (e) e.preventDefault();
     setIsDrawing(false);
-    setIsMoving(false);
   };
 
   const handleDrawing = (e) => {
-    if (!timerRunning) return;
+    if (!isDrawing || !timerRunning) return;
     e.preventDefault();
     const { x, y } = getCoordinates(e);
-
-    if (tool === 'pencil' && isDrawing) {
-      draw(x - 1, y - 1, x, y, 'black', brushSize);
-      socketRef.current.emit('draw', {
-        x0: x - 1,
-        y0: y - 1,
-        x1: x,
-        y1: y,
-        color: 'black',
-        size: brushSize
-      });
-    } else if (tool === 'move' && isMoving && selectedShape) {
-      const dx = x - startPos.x;
-      const dy = y - startPos.y;
-      moveShape(selectedShape.id, selectedShape.x + dx, selectedShape.y + dy);
-      setStartPos({ x, y });
-    }
+    draw(x - 1, y - 1, x, y, 'black', brushSize);
+    socketRef.current.emit('draw', {
+      x0: x - 1,
+      y0: y - 1,
+      x1: x,
+      y1: y,
+      color: 'black',
+      size: brushSize
+    });
   };
 
-  // Use handleDrawing for both mouse and touch events
   const handleTouchMove = handleDrawing;
 
   const clearCanvas = () => {
@@ -269,144 +223,6 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
   const stopGame = () => {
     socketRef.current.emit('stopGame', { roomId });
   };
-
-  const handleToolChange = (event, newTool) => {
-    if (newTool !== null) {
-      setTool(newTool);
-      setSelectedShape(null);
-    }
-  };
-
-  const addShape = (type, x, y) => {
-    const newShape = {
-      id: Date.now(),
-      type,
-      x,
-      y,
-      width: 50,
-      height: 50,
-    };
-    setShapes([...shapes, newShape]);
-    socketRef.current.emit('addShape', { roomId, shape: newShape });
-  };
-
-  const moveShape = (shapeId, newX, newY) => {
-    setShapes(shapes.map(shape => 
-      shape.id === shapeId 
-        ? { ...shape, x: newX, y: newY }
-        : shape
-    ));
-    socketRef.current.emit('moveShape', { roomId, shapeId, x: newX, y: newY });
-  };
-
-  const findShapeAtPosition = (x, y) => {
-    return shapes.find(shape => {
-      return x >= shape.x && 
-             x <= shape.x + shape.width && 
-             y >= shape.y && 
-             y <= shape.y + shape.height;
-    });
-  };
-
-  useEffect(() => {
-    if (!socketRef.current) return;
-
-    socketRef.current.on('shapeAdded', ({ shape }) => {
-      setShapes(prevShapes => [...prevShapes, shape]);
-    });
-
-    socketRef.current.on('shapeMoved', ({ shapeId, x, y }) => {
-      setShapes(prevShapes => prevShapes.map(shape =>
-        shape.id === shapeId ? { ...shape, x, y } : shape
-      ));
-    });
-
-    return () => {
-      socketRef.current.off('shapeAdded');
-      socketRef.current.off('shapeMoved');
-    };
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const context = canvas.getContext('2d');
-    
-    // Clear canvas
-    context.clearRect(0, 0, canvasWidth, canvasHeight);
-    
-    // Draw all shapes
-    shapes.forEach(shape => {
-      context.beginPath();
-      context.strokeStyle = 'black';
-      context.lineWidth = 2;
-      
-      if (shape.type === 'circle') {
-        context.arc(
-          shape.x + shape.width/2,
-          shape.y + shape.height/2,
-          shape.width/2,
-          0,
-          2 * Math.PI
-        );
-      } else if (shape.type === 'square') {
-        context.rect(shape.x, shape.y, shape.width, shape.height);
-      }
-      
-      context.stroke();
-      
-      // Highlight selected shape
-      if (selectedShape && selectedShape.id === shape.id) {
-        context.strokeStyle = '#4CAF50';
-        context.setLineDash([5, 5]);
-        context.strokeRect(
-          shape.x - 2,
-          shape.y - 2,
-          shape.width + 4,
-          shape.height + 4
-        );
-        context.setLineDash([]);
-      }
-    });
-  }, [shapes, selectedShape, canvasWidth, canvasHeight]);
-
-  const renderToolbar = () => (
-    <Paper 
-      sx={{ 
-        p: { xs: 1, sm: 2 }, 
-        mb: 2,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        borderRadius: 3,
-      }}
-    >
-      <Typography 
-        variant={isMobile ? "subtitle1" : "h6"} 
-        gutterBottom 
-        sx={{ color: 'primary.main' }}
-      >
-        Drawing Tools
-      </Typography>
-      <StyledToggleButtonGroup
-        value={tool}
-        exclusive
-        onChange={handleToolChange}
-        aria-label="drawing tools"
-        size={isMobile ? "small" : "medium"}
-      >
-        <ToggleButton value="pencil" aria-label="pencil">
-          <CreateIcon />
-        </ToggleButton>
-        <ToggleButton value="circle" aria-label="circle">
-          <CircleOutlinedIcon />
-        </ToggleButton>
-        <ToggleButton value="square" aria-label="square">
-          <RectangleOutlinedIcon />
-        </ToggleButton>
-        <ToggleButton value="move" aria-label="move">
-          <PanToolIcon />
-        </ToggleButton>
-      </StyledToggleButtonGroup>
-    </Paper>
-  );
 
   return (
     <Box sx={{ 
@@ -574,35 +390,32 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
       )}
 
       {!isAdmin && (
-        <>
-          {renderToolbar()}
-          <Paper 
-            sx={{ 
-              p: { xs: 2, sm: 3 }, 
-              width: '100%', 
-              maxWidth: canvasWidth,
-              mb: { xs: 1, sm: 2 },
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              borderRadius: 3,
-            }}
+        <Paper 
+          sx={{ 
+            p: { xs: 2, sm: 3 }, 
+            width: '100%', 
+            maxWidth: canvasWidth,
+            mb: { xs: 1, sm: 2 },
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            borderRadius: 3,
+          }}
+        >
+          <Typography 
+            variant={isMobile ? "subtitle1" : "h6"} 
+            gutterBottom 
+            sx={{ color: 'primary.main' }}
           >
-            <Typography 
-              variant={isMobile ? "subtitle1" : "h6"} 
-              gutterBottom 
-              sx={{ color: 'primary.main' }}
-            >
-              {tool === 'pencil' ? 'Brush Size' : 'Shape Size'}
-            </Typography>
-            <StyledSlider
-              value={brushSize}
-              onChange={(e, value) => setBrushSize(value)}
-              min={1}
-              max={20}
-              valueLabelDisplay="auto"
-              disabled={!timerRunning}
-            />
-          </Paper>
-        </>
+            Brush Size
+          </Typography>
+          <StyledSlider
+            value={brushSize}
+            onChange={(e, value) => setBrushSize(value)}
+            min={1}
+            max={20}
+            valueLabelDisplay="auto"
+            disabled={!timerRunning}
+          />
+        </Paper>
       )}
 
       <Paper
@@ -615,7 +428,7 @@ const DrawingRoom = ({ roomId, isAdmin }) => {
           position: 'relative',
           overflow: 'hidden',
           width: 'fit-content',
-          touchAction: 'none', // Prevent default touch actions
+          touchAction: 'none',
           '&::before': {
             content: '""',
             position: 'absolute',
