@@ -1,70 +1,136 @@
-# Getting Started with Create React App
+# Scribble0 - Real-time Drawing Game
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A real-time collaborative drawing application with timer controls, admin features, and multi-player support. Players can join a room and draw together in real-time, with one user having admin controls for managing the game session.
 
-## Available Scripts
+Backend repository: [scribble0-game-backend](https://github.com/AjnasNB/scribble0-game-backend)
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+### Room Management
+* Create and join drawing rooms with unique room IDs
+* Admin controls for room management
+* Support for up to 12 players per room
+* Real-time player count tracking
+* Automatic room cleanup when empty
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Drawing Features
+* Real-time drawing synchronization between all players
+* Adjustable brush size (1-20px)
+* Smooth drawing experience with touch support
+* Cross-device compatibility
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### Admin Controls
+* Start/Stop game sessions
+* Adjustable timer (0-300 seconds)
+* Canvas clearing capability
+* Player management
 
-### `npm test`
+### User Interface
+* Modern, responsive Material-UI design
+* Dark theme with green accent colors
+* Mobile and tablet optimized layout
+* Real-time status indicators
+* Intuitive drawing controls
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Technical Features
+* WebSocket-based real-time communication
+* Secure WSS connection support
+* Automatic reconnection handling
+* Cross-origin resource sharing (CORS)
+* Touch and mouse event handling
 
-### `npm run build`
+## Prerequisites
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+* Node.js (v14 or higher)
+* npm (Node Package Manager)
+* Modern web browser with WebSocket support
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Installation
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+1. Clone the repository:
+```bash
+git clone <repository-url>
+```
 
-### `npm run eject`
+2. Install frontend dependencies:
+```bash
+cd client
+npm install
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+3. Set up environment variables:
+   - Create `.env` file in the client directory
+   - Add backend URL:
+```
+REACT_APP_BACKEND_URL=https://backendscribble.ajnasnb.com
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Running the Application
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+1. Start the development server:
+```bash
+cd client
+npm start
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+2. Open your browser and navigate to `http://localhost:3000`
 
-## Learn More
+## Usage
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Joining a Room
+1. Enter a room ID or generate a new one
+2. Choose whether to join as an admin (requires password)
+3. Share the room ID with other players
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Admin Features
+* Set timer duration (up to 5 minutes)
+* Start/Stop the game session
+* Clear canvas
+* Monitor player count
 
-### Code Splitting
+### Player Features
+* Draw when the game is active
+* Adjust brush size
+* See real-time updates from other players
+* View remaining time
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Technologies Used
 
-### Analyzing the Bundle Size
+### Frontend
+* React.js
+* Material-UI
+* Socket.IO Client
+* CSS-in-JS styling
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Backend ([Repository](https://github.com/AjnasNB/scribble0-game-backend))
+* Node.js
+* Express.js
+* Socket.IO
+* CORS
 
-### Making a Progressive Web App
+## Security Features
+* Admin password protection
+* Secure WebSocket connections (WSS)
+* CORS configuration
+* Input validation
+* Error handling
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Error Handling
+* Connection error recovery
+* Room full notifications
+* Admin disconnection handling
+* Invalid room/password alerts
 
-### Advanced Configuration
+## Contributing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-### Deployment
+## License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### `npm run build` fails to minify
+## Acknowledgments
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+* Socket.IO team for the real-time engine
+* Material-UI team for the component library
+* All contributors and testers 
