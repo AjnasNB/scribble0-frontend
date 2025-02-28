@@ -45,6 +45,8 @@ Backend repository: [scribble0-game-backend](https://github.com/AjnasNB/scribble
 * npm (Node Package Manager)
 * Modern web browser with WebSocket support
 
+## Admin Pass: test123
+
 ## Installation
 
 1. Clone the repository:
